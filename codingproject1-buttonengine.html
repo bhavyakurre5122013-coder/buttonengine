@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Button Engine</title>
+    <style>
+        :root {
+            --bg-light: #fcfcf9;
+            --surface-light: #fffff9;
+            --text-light: #1f2121;
+            --border-light: rgba(94, 82, 64, 0.2);
+            --accent: #21808d;
+            --accent-hover: #1d7480;
+            
+            --bg-dark: #1f2121;
+            --surface-dark: #262828;
+            --text-dark: #f5f5f5;
+            --border-dark: rgba(119, 124, 124, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-light);
+            color: var(--text-light);
+            transition: background 0.3s, color 0.3s;
+        }
+
+        body.dark-mode {
+            background: var(--bg-dark);
+            color: var(--text-dark);
+        }
+
+        /* Header */
+        .header {
+            background: var(--surface-light);
+            border-bottom: 1px solid var(--border-light);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        body.dark-mode .header {
+            background: var(--surface-dark);
+            border-color: var(--border-dark);
+        }
+
+        .logo {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        .theme-toggle {
+            background: transparent;
+            border: 1px solid var(--border-light);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            color: inherit;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        body.dark-mode .theme-toggle {
+            border-color: var(--border-dark);
+        }
+
+        .theme-toggle:hover {
+            background: rgba(33, 128, 141, 0.1);
+            border-color: var(--accent);
+        }
+
+        /* Tabs */
+        .tabs {
+            background: var(--surface-light);
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            gap: 4px;
+            padding: 0 20px;
+            overflow-x: auto;
+        }
+
+        body.dark-mode .tabs {
+            background: var(--surface-dark);
+            border-color: var(--border-dark);
+        }
+
+        .tab-btn {
+            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            font-size: 14px;
+            color: inherit;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            background: rgba(33, 128, 141, 0.05);
+        }
+
+        .tab-btn.active {
+            border-bottom-color: var(--accent);
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 40px;
+            min-height: calc(100vh - 120px);
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+            width: 100%;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Settings Panels */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            max-width: 900px;
+        }
+
+        .settings-section {
+            background: var(--surface-light);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        body.dark-mode .settings-section {
+            background: var(--surface-dark);
+            border-color: var(--border-dark);
+        }
+
+        .settings-section h3 {
+            font-size: 16px;
+            margin-bottom: 16px;
+            color: var(--accent);
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+            background: var(--bg-light);
+            color: inherit;
+            font-size: 14px;
+        }
+
+        body.dark-mode .form-group input,
+        body.dark-mode .form-group select {
+            border-color: var(--border-dark);
+            background: var(--bg-dark);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: 2px solid var(--accent);
+            outline-offset: 0;
+        }
+
+        /* Preview Area */
+        .preview-area {
+            background: var(--surface-light);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            padding: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        body.dark-mode .preview-area {
+            background: var(--surface-dark);
+            border-color: var(--border-dark);
+        }
+
+        #previewButton {
+            padding: 12px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        /* Code Display */
+        .code-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .code-header h3 {
+            font-size: 16px;
+            color: var(--accent);
+        }
+
+        .copy-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.3s;
+        }
+
+        .copy-btn:hover {
+            background: var(--accent-hover);
+        }
+
+        .code-block {
+            background: var(--surface-light);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }
+
+        body.dark-mode .code-block {
+            background: var(--surface-dark);
+            border-color: var(--border-dark);
+        }
+
+        .code-block pre {
+            margin: 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        .generate-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 32px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 500;
+            display: block;
+            margin: 20px auto;
+            transition: background 0.3s;
+        }
+
+        .generate-btn:hover {
+            background: var(--accent-hover);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                padding: 20px;
+            }
+
+            .settings-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .preview-area {
+                padding: 40px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">⚡ Button Engine</div>
+        <button class="theme-toggle" onclick="toggleTheme()">
+            <span id="themeIcon">🌙 Dark Mode</span>
+        </button>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('basics')">Basics</button>
+        <button class="tab-btn" onclick="switchTab('layout')">Layout & Spacing</button>
+        <button class="tab-btn" onclick="switchTab('borders')">Borders & Backgrounds</button>
+        <button class="tab-btn" onclick="switchTab('text')">Text Styling</button>
+        <button class="tab-btn" onclick="switchTab('effects')">Effects & Shadows</button>
+        <button class="tab-btn" onclick="switchTab('filters')">Filters & Opacity</button>
+        <button class="tab-btn" onclick="switchTab('gradients')">Gradients</button>
+        <button class="tab-btn" onclick="switchTab('states')">Hover & States</button>
+        <button class="tab-btn" onclick="switchTab('animations')">Animations</button>
+        <button class="tab-btn" onclick="switchTab('transforms')">Transforms</button>
+        <button class="tab-btn" onclick="switchTab('advanced')">Advanced</button>
+        <button class="tab-btn" onclick="switchTab('preview')">Execute</button>
+        <button class="tab-btn" onclick="switchTab('code')">Code</button>
+    </div>
+
+    <div class="container">
+        <!-- Basics Tab -->
+        <div id="basics" class="tab-content active">
+            <div class="settings-grid">
+                <div class="settings-section">
+                    <h3>Button Content</h3>
+                    <div class="form-group">
+                        <label>Button Text</label>
+                        <input type="text" id="buttonText" value="Click Me" oninput="updatePreview()">
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Size</h3>
+                    <div class="form-group">
+                        <label>Width</label>
+                        <input type="text" id="width" placeholder="auto (e.g., 200px, 50%)" oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Height</label>
+                        <input type="text" id="height" placeholder="auto (e.g., 50px)" oninput="updatePreview()">
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Display Type</h3>
+                    <div class="form-group">
+                        <label>Display</label>
+                        <select id="display" onchange="updatePreview()">
+                            <option value="inline-block">Inline Block</option>
+                            <option value="block">Block</option>
+                            <option value="inline">Inline</option>
+                            <option value="flex">Flex</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Box Sizing</label>
+                        <select id="boxSizing" onchange="updatePreview()">
+                            <option value="border-box" selected>Border Box</option>
+                            <option value="content-box">Content Box</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Layout & Spacing Tab -->
+        <div id="layout" class="tab-content">
+            <div class="settings-grid">
+                <div class="settings-section">
+                    <h3>Padding</h3>
+                    <div class="form-group">
+                        <label>All Sides (e.g., 12px 24px)</label>
+                        <input type="text" id="padding" placeholder="12px 24px" oninput="updatePreview()">
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Margin</h3>
+                    <div class="form-group">
+                        <label>All Sides (e.g., 10px)</label>
+                        <input type="text" id="margin" placeholder="0" oninput="updatePreview()">
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Flex Properties</h3>
+                    <div class="form-group">
+                        <label>Align Items</label>
+                        <select id="alignItems" onchange="updatePreview()">
+                            <option value="">None</option>
+                            <option value="center">Center</option>
+                            <option value="flex-start">Start</option>
+                            <option value="flex-end">End</option>
+                            <option value="stretch">Stretch</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Justify Content</label>
+                        <select id="justifyContent" onchange="updatePreview()">
+                            <option value="">None</option>
+                            <option value="center">Center</option>
+                            <option value="flex-start">Start</option>
+                            <option value="flex-end">End</option>
+                            <option value="space-between">Space Between</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Gap</label>
+                        <input type="text" id="gap" placeholder="e.g., 8px" oninput="updatePreview()">
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Position</h3>
+                    <div class="form-group">
+                        <label>Position Type</label>
+                        <select id="position" onchange="updatePreview()">
+                            <option value="static">Static</option>
+                            <option value="relative">Relative</option>
+                            <option value="absolute">Absolute</option>
+                            <option value="fixed">Fixed</option>
+                            <option value="sticky">Sticky</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Top</label>
+                        <input type="text" id="top" placeholder="e.g., 10px" oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Left</label>
+                        <input type="text" id="left" placeholder="e.g., 10px" oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Z-Index</label>
+                        <input type="text" id="zIndex" placeholder="e.g., 10" oninput="updatePreview()">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Borders & Backgrounds Tab -->
+        <div id="borders" class="tab-content">
+            <div class="settings-grid">
+                <div class="settings-section">
+                    <h3>Border</h3>
+                    <div class="form-group">
+                        <label>Border Width</label>
+                        <input type="text" id="borderWidth" placeholder="e.g., 2px" oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Border Style</label>
+                        <select id="borderStyle" onchange="updatePreview()">
+                            <option value="none">None</option>
+                            <option value="solid">Solid</option>
+                            <option value="dashed">Dashed</option>
+                            <option value="dotted">Dotted</option>
+                            <option value="double">Double</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Border Color</label>
+                        <input type="color" id="borderColor" value="#000000" oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Border Radius</label>
+                        <input type="text" id="borderRadius" placeholder="e.g., 8px" oninput="updatePreview()">
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Background</h3>
+                    <div class="form-group">
+                        <label>Background Color</label>
+                        <input type="color" id="backgroundColor" value="#21808d" oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Background Image URL</label>
+                        <input type="text" id="backgroundImage" placeholder="https://..." oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Background Size</label>
+                        <select id="backgroundSize" onchange="updatePreview()">
+                            <option value="">Default</option>
+                            <option value="cover">Cover</option>
+                            <option value="contain">Contain</option>
+                            <option value="auto">Auto</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Background Repeat</label>
+                        <select id="backgroundRepeat" onchange="updatePreview()">
+                            <option value="no-repeat">No Repeat</option>
+                            <option value="repeat">Repeat</option>
+                            <option value="repeat-x">Repeat X</option>
+                            <option value="repeat-y">Repeat Y</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Background Position</label>
+                        <input type="text" id="backgroundPosition" placeholder="center center" oninput="updatePreview()">
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Outline</h3>
+                    <div class="form-group">
+                        <label>Outline</label>
+                        <input type="text" id="outline" placeholder="e.g., 2px solid red" oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Outline Offset</label>
+                        <input type="text" id="outlineOffset" placeholder="e.g., 4px" oninput="updatePreview()">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Text Styling Tab -->
+        <div id="text" class="tab-content">
+            <div class="settings-grid">
+                <div class="settings-section">
+                    <h3>Font</h3>
+                    <div class="form-group">
+                        <label>Font Size</label>
+                        <input type="text" id="fontSize" placeholder="e.g., 16px" oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Font Weight</label>
+                        <select id="fontWeight" onchange="updatePreview()">
+                            <option value="normal">Normal</option>
+                            <option value="bold">Bold</option>
+                            <option value="100">100</option>
+                            <option value="300">300</option>
+                            <option value="500">500</option>
+                            <option value="600">600</option>
+                            <option value="700">700</option>
+                            <option value="900">900</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Font Family</label>
+                        <input type="text" id="fontFamily" placeholder="e.g., Arial, sans-serif" oninput="updatePreview()">
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Text Effects</h3>
+                    <div class="form-group">
+                        <label>Text Color</label>
+                        <input type="color" id="color" value="#ffffff" oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Text Transform</label>
+                        <select id="textTransform" onchange="updatePreview()">
+                            <option value="none">None</option>
+                            <option value="uppercase">Uppercase</option>
+                            <option value="lowercase">Lowercase</option>
+                            <option value="capitalize">Capitalize</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Text Decoration</label>
+                        <select id="textDecoration" onchange="updatePreview()">
+                            <option value="none">None</option>
+                            <option value="underline">Underline</option>
+                            <option value="overline">Overline</option>
+                            <option value="line-through">Line Through</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Letter Spacing</label>
+                        <input type="text" id="letterSpacing" placeholder="e.g., 1px" oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Line Height</label>
+                        <input type="text" id="lineHeight" placeholder="e.g., 1.5" oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Text Shadow</label>
+                        <input type="text" id="textShadow" placeholder="2px 2px 4px rgba(0,0,0,0.5)" oninput="updatePreview()">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Effects & Shadows Tab -->
+        <div id="effects" class="tab-content">
+            <div class="settings-grid">
+                <div class="settings-section">
+                    <h3>Box Shadow</h3>
+                    <div class="form-group">
+                        <label>Box Shadow</label>
+                        <input type="text" id="boxShadow" placeholder="0 4px 6px rgba(0,0,0,0.1)" oninput="updatePreview()">
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Cursor & Interaction</h3>
+                    <div class="form-group">
+                        <label>Cursor</label>
+                        <select id="cursor" onchange="updatePreview()">
+                            <option value="pointer">Pointer</option>
+                            <option value="default">Default</option>
+                            <option value="not-allowed">Not Allowed</option>
+                            <option value="grab">Grab</option>
+                            <option value="help">Help</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>User Select</label>
+                        <select id="userSelect" onchange="updatePreview()">
+                            <option value="auto">Auto</option>
+                            <option value="none">None</option>
+                            <option value="text">Text</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Pointer Events</label>
+                        <select id="pointerEvents" onchange="updatePreview()">
+                            <option value="auto">Auto</option>
+                            <option value="none">None</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters & Opacity Tab -->
+        <div id="filters" class="tab-content">
+            <div class="settings-grid">
+                <div class="settings-section">
+                    <h3>Opacity</h3>
+                    <div class="form-group">
+                        <label>Opacity (0-1)</label>
+                        <input type="text" id="opacity" placeholder="1" oninput="updatePreview()">
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Filters</h3>
+                    <div class="form-group">
+                        <label>Blur (e.g., 5px)</label>
+                        <input type="text" id="blur" placeholder="0px" oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Brightness (e.g., 1.2)</label>
+                        <input type="text" id="brightness" placeholder="1" oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Contrast (e.g., 1.5)</label>
+                        <input type="text" id="contrast" placeholder="1" oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Grayscale (0-1)</label>
+                        <input type="text" id="grayscale" placeholder="0" oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Hue Rotate (e.g., 90deg)</label>
+                        <input type="text" id="hueRotate" placeholder="0deg" oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Sepia (0-1)</label>
+                        <input type="text" id="sepia" placeholder="0" oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Drop Shadow</label>
+                        <input type="text" id="dropShadow" placeholder="0 0 10px rgba(0,0,0,0.5)" oninput="updatePreview()">
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Backdrop Filter</h3>
+                    <div class="form-group">
+                        <label>Backdrop Blur</label>
+                        <input type="text" id="backdropBlur" placeholder="e.g., 10px" oninput="updatePreview()">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gradients Tab -->
+        <div id="gradients" class="tab-content">
+            <div class="settings-grid">
+                <div class="settings-section">
+                    <h3>Linear Gradient</h3>
+                    <div class="form-group">
+                        <label>Linear Gradient</label>
+                        <input type="text" id="linearGradient" placeholder="to right, #ff0000, #0000ff" oninput="updatePreview()">
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Radial Gradient</h3>
+                    <div class="form-group">
+                        <label>Radial Gradient</label>
+                        <input type="text" id="radialGradient" placeholder="circle, #ff0000, #0000ff" oninput="updatePreview()">
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Conic Gradient</h3>
+                    <div class="form-group">
+                        <label>Conic Gradient</label>
+                        <input type="text" id="conicGradient" placeholder="from 0deg, #ff0000, #0000ff" oninput="updatePreview()">
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Advanced</h3>
+                    <div class="form-group">
+                        <label>Clip Path</label>
+                        <input type="text" id="clipPath" placeholder="circle(50%)" oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Mix Blend Mode</label>
+                        <select id="mixBlendMode" onchange="updatePreview()">
+                            <option value="normal">Normal</option>
+                            <option value="multiply">Multiply</option>
+                            <option value="screen">Screen</option>
+                            <option value="overlay">Overlay</option>
+                            <option value="difference">Difference</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hover & States Tab -->
+        <div id="states" class="tab-content">
+            <div class="settings-grid">
+                <div class="settings-section">
+                    <h3>Hover Effects</h3>
+                    <div class="form-group">
+                        <label>Hover Background</label>
+                        <input type="color" id="hoverBg" value="#1d7480" oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Hover Text Color</label>
+                        <input type="color" id="hoverColor" value="#ffffff" oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Hover Transform</label>
+                        <input type="text" id="hoverTransform" placeholder="scale(1.05)" oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Hover Shadow</label>
+                        <input type="text" id="hoverShadow" placeholder="0 6px 12px rgba(0,0,0,0.2)" oninput="updatePreview()">
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Active/Focus Effects</h3>
+                    <div class="form-group">
+                        <label>Active Background</label>
+                        <input type="color" id="activeBg" value="#1a6873" oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Focus Outline</label>
+                        <input type="text" id="focusOutline" placeholder="2px solid #21808d" oninput="updatePreview()">
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Transition</h3>
+                    <div class="form-group">
+                        <label>Transition Duration</label>
+                        <input type="text" id="transition" placeholder="all 0.3s ease" oninput="updatePreview()">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Animations Tab -->
+        <div id="animations" class="tab-content">
+            <div class="settings-grid">
+                <div class="settings-section">
+                    <h3>Animation Properties</h3>
+                    <div class="form-group">
+                        <label>Animation Name</label>
+                        <input type="text" id="animationName" placeholder="e.g., pulse" oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Animation Duration</label>
+                        <input type="text" id="animationDuration" placeholder="e.g., 2s" oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Animation Timing</label>
+                        <select id="animationTiming" onchange="updatePreview()">
+                            <option value="ease">Ease</option>
+                            <option value="linear">Linear</option>
+                            <option value="ease-in">Ease In</option>
+                            <option value="ease-out">Ease Out</option>
+                            <option value="ease-in-out">Ease In Out</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Animation Delay</label>
+                        <input type="text" id="animationDelay" placeholder="e.g., 0.5s" oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Iteration Count</label>
+                        <input type="text" id="animationIterationCount" placeholder="infinite or number" oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Animation Direction</label>
+                        <select id="animationDirection" onchange="updatePreview()">
+                            <option value="normal">Normal</option>
+                            <option value="reverse">Reverse</option>
+                            <option value="alternate">Alternate</option>
+                            <option value="alternate-reverse">Alternate Reverse</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Keyframes Definition</h3>
+                    <div class="form-group">
+                        <label>Custom Keyframes CSS</label>
+                        <textarea id="keyframesCSS" rows="8" placeholder="@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}" style="width: 100%; padding: 8px; font-family: monospace; border: 1px solid var(--border-light); border-radius: 6px; background: var(--bg-light); color: inherit;" oninput="updatePreview()"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transforms Tab -->
+        <div id="transforms" class="tab-content">
+            <div class="settings-grid">
+                <div class="settings-section">
+                    <h3>Transform Functions</h3>
+                    <div class="form-group">
+                        <label>Scale</label>
+                        <input type="text" id="scale" placeholder="e.g., 1.1" oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Rotate</label>
+                        <input type="text" id="rotate" placeholder="e.g., 45deg" oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Translate X</label>
+                        <input type="text" id="translateX" placeholder="e.g., 10px" oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Translate Y</label>
+                        <input type="text" id="translateY" placeholder="e.g., 10px" oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Skew</label>
+                        <input type="text" id="skew" placeholder="e.g., 10deg, 5deg" oninput="updatePreview()">
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Transform Properties</h3>
+                    <div class="form-group">
+                        <label>Transform Origin</label>
+                        <input type="text" id="transformOrigin" placeholder="center center" oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Perspective</label>
+                        <input type="text" id="perspective" placeholder="e.g., 1000px" oninput="updatePreview()">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Advanced Tab -->
+        <div id="advanced" class="tab-content">
+            <div class="settings-grid">
+                <div class="settings-section">
+                    <h3>CSS Variables</h3>
+                    <div class="form-group">
+                        <label>Custom CSS Variable</label>
+                        <input type="text" id="cssVariable" placeholder="--button-bg: #21808d;" oninput="updatePreview()">
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Pseudo Elements</h3>
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="enableBefore" onchange="updatePreview()">
+                        <label>Enable ::before</label>
+                    </div>
+                    <div class="form-group">
+                        <label>::before Content</label>
+                        <input type="text" id="beforeContent" placeholder="'✨ '" oninput="updatePreview()">
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="enableAfter" onchange="updatePreview()">
+                        <label>Enable ::after</label>
+                    </div>
+                    <div class="form-group">
+                        <label>::after Content</label>
+                        <input type="text" id="afterContent" placeholder="' →'" oninput="updatePreview()">
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Special Effects</h3>
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="glowEffect" onchange="updatePreview()">
+                        <label>Glow Pulse Effect</label>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="rippleEffect" onchange="updatePreview()">
+                        <label>Ripple Effect (on click)</label>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="frostedGlass" onchange="updatePreview()">
+                        <label>Frosted Glass</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Execute Tab -->
+        <div id="preview" class="tab-content">
+            <div class="preview-area">
+                <button id="previewButton">Click Me</button>
+            </div>
+            <button class="generate-btn" onclick="generateCode()">Generate Code</button>
+        </div>
+
+        <!-- Code Tab -->
+        <div id="code" class="tab-content">
+            <div class="code-container">
+                <div class="code-header">
+                    <h3>HTML</h3>
+                    <button class="copy-btn" onclick="copyCode('htmlCode')">Copy HTML</button>
+                </div>
+                <div class="code-block">
+                    <pre id="htmlCode"></pre>
+                </div>
+
+                <div class="code-header">
+                    <h3>CSS</h3>
+                    <button class="copy-btn" onclick="copyCode('cssCode')">Copy CSS</button>
+                </div>
+                <div class="code-block">
+                    <pre id="cssCode"></pre>
+                </div>
+
+                <div class="code-header">
+                    <h3>JavaScript (Optional)</h3>
+                    <button class="copy-btn" onclick="copyCode('jsCode')">Copy JS</button>
+                </div>
+                <div class="code-block">
+                    <pre id="jsCode"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Theme Toggle
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            document.getElementById('themeIcon').textContent = isDark ? '☀️ Light Mode' : '🌙 Dark Mode';
+        }
+
+        // Tab Switching
+        function switchTab(tabName) {
+            const tabs = document.querySelectorAll('.tab-content');
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            
+            tabs.forEach(tab => tab.classList.remove('active'));
+            tabBtns.forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Update Preview
+        function updatePreview() {
+            const button = document.getElementById('previewButton');
+            const text = document.getElementById('buttonText').value;
+            
+            button.textContent = text;
+            
+            // Reset styles
+            button.style.cssText = '';
+            
+            // Apply all styles
+            const styles = {
+                width: document.getElementById('width').value,
+                height: document.getElementById('height').value,
+                padding: document.getElementById('padding').value,
+                margin: document.getElementById('margin').value,
+                display: document.getElementById('display').value,
+                boxSizing: document.getElementById('boxSizing').value,
+                borderWidth: document.getElementById('borderWidth').value,
+                borderStyle: document.getElementById('borderStyle').value,
+                borderColor: document.getElementById('borderColor').value,
+                borderRadius: document.getElementById('borderRadius').value,
+                backgroundColor: document.getElementById('backgroundColor').value,
+                color: document.getElementById('color').value,
+                fontSize: document.getElementById('fontSize').value,
+                fontWeight: document.getElementById('fontWeight').value,
+                fontFamily: document.getElementById('fontFamily').value,
+                textTransform: document.getElementById('textTransform').value,
+                textDecoration: document.getElementById('textDecoration').value,
+                letterSpacing: document.getElementById('letterSpacing').value,
+                lineHeight: document.getElementById('lineHeight').value,
+                textShadow: document.getElementById('textShadow').value,
+                boxShadow: document.getElementById('boxShadow').value,
+                cursor: document.getElementById('cursor').value,
+                opacity: document.getElementById('opacity').value,
+                userSelect: document.getElementById('userSelect').value,
+                pointerEvents: document.getElementById('pointerEvents').value,
+                alignItems: document.getElementById('alignItems').value,
+                justifyContent: document.getElementById('justifyContent').value,
+                gap: document.getElementById('gap').value,
+                position: document.getElementById('position').value,
+                top: document.getElementById('top').value,
+                left: document.getElementById('left').value,
+                zIndex: document.getElementById('zIndex').value,
+                outline: document.getElementById('outline').value,
+                outlineOffset: document.getElementById('outlineOffset').value,
+                transformOrigin: document.getElementById('transformOrigin').value,
+                perspective: document.getElementById('perspective').value,
+                clipPath: document.getElementById('clipPath').value,
+                mixBlendMode: document.getElementById('mixBlendMode').value,
+                transition: document.getElementById('transition').value
+            };
+
+            // Background image
+            const bgImage = document.getElementById('backgroundImage').value;
+            if (bgImage) {
+                styles.backgroundImage = `url('${bgImage}')`;
+                styles.backgroundSize = document.getElementById('backgroundSize').value;
+                styles.backgroundRepeat = document.getElementById('backgroundRepeat').value;
+                styles.backgroundPosition = document.getElementById('backgroundPosition').value;
+            }
+
+            // Gradients
+            const linearGradient = document.getElementById('linearGradient').value;
+            const radialGradient = document.getElementById('radialGradient').value;
+            const conicGradient = document.getElementById('conicGradient').value;
+            
+            if (linearGradient) {
+                styles.background = `linear-gradient(${linearGradient})`;
+            } else if (radialGradient) {
+                styles.background = `radial-gradient(${radialGradient})`;
+            } else if (conicGradient) {
+                styles.background = `conic-gradient(${conicGradient})`;
+            }
+
+            // Filters
+            let filters = [];
+            const blur = document.getElementById('blur').value;
+            const brightness = document.getElementById('brightness').value;
+            const contrast = document.getElementById('contrast').value;
+            const grayscale = document.getElementById('grayscale').value;
+            const hueRotate = document.getElementById('hueRotate').value;
+            const sepia = document.getElementById('sepia').value;
+            const dropShadow = document.getElementById('dropShadow').value;
+
+            if (blur) filters.push(`blur(${blur})`);
+            if (brightness && brightness !== '1') filters.push(`brightness(${brightness})`);
+            if (contrast && contrast !== '1') filters.push(`contrast(${contrast})`);
+            if (grayscale && grayscale !== '0') filters.push(`grayscale(${grayscale})`);
+            if (hueRotate && hueRotate !== '0deg') filters.push(`hue-rotate(${hueRotate})`);
+            if (sepia && sepia !== '0') filters.push(`sepia(${sepia})`);
+            if (dropShadow) filters.push(`drop-shadow(${dropShadow})`);
+
+            if (filters.length > 0) {
+                styles.filter = filters.join(' ');
+            }
+
+            // Backdrop filter
+            const backdropBlur = document.getElementById('backdropBlur').value;
+            if (backdropBlur) {
+                styles.backdropFilter = `blur(${backdropBlur})`;
+            }
+
+            // Transforms
+            let transforms = [];
+            const scale = document.getElementById('scale').value;
+            const rotate = document.getElementById('rotate').value;
+            const translateX = document.getElementById('translateX').value;
+            const translateY = document.getElementById('translateY').value;
+            const skew = document.getElementById('skew').value;
+
+            if (scale) transforms.push(`scale(${scale})`);
+            if (rotate) transforms.push(`rotate(${rotate})`);
+            if (translateX) transforms.push(`translateX(${translateX})`);
+            if (translateY) transforms.push(`translateY(${translateY})`);
+            if (skew) transforms.push(`skew(${skew})`);
+
+            if (transforms.length > 0) {
+                styles.transform = transforms.join(' ');
+            }
+
+            // Apply styles
+            for (let [property, value] of Object.entries(styles)) {
+                if (value) {
+                    button.style[property] = value;
+                }
+            }
+
+            // Special effects
+            if (document.getElementById('frostedGlass').checked) {
+                button.style.background = 'rgba(255, 255, 255, 0.1)';
+                button.style.backdropFilter = 'blur(10px)';
+                button.style.border = '1px solid rgba(255, 255, 255, 0.2)';
+            }
+
+            // Update hover/active styles
+            updatePseudoStyles();
+        }
+
+        function updatePseudoStyles() {
+            const button = document.getElementById('previewButton');
+            const styleId = 'dynamic-button-styles';
+            let styleElement = document.getElementById(styleId);
+            
+            if (!styleElement) {
+                styleElement = document.createElement('style');
+                styleElement.id = styleId;
+                document.head.appendChild(styleElement);
+            }
+
+            const hoverBg = document.getElementById('hoverBg').value;
+            const hoverColor = document.getElementById('hoverColor').value;
+            const hoverTransform = document.getElementById('hoverTransform').value;
+            const hoverShadow = document.getElementById('hoverShadow').value;
+            const activeBg = document.getElementById('activeBg').value;
+            const focusOutline = document.getElementById('focusOutline').value;
+            
+            let css = '#previewButton:hover {';
+            if (hoverBg) css += `background-color: ${hoverBg} !important;`;
+            if (hoverColor) css += `color: ${hoverColor} !important;`;
+            if (hoverTransform) css += `transform: ${hoverTransform} !important;`;
+            if (hoverShadow) css += `box-shadow: ${hoverShadow} !important;`;
+            css += '}';
+
+            css += '#previewButton:active {';
+            if (activeBg) css += `background-color: ${activeBg} !important;`;
+            css += '}';
+
+            css += '#previewButton:focus {';
+            if (focusOutline) css += `outline: ${focusOutline} !important;`;
+            css += '}';
+
+            // Pseudo elements
+            if (document.getElementById('enableBefore').checked) {
+                const beforeContent = document.getElementById('beforeContent').value || "''";
+                css += `#previewButton::before { content: ${beforeContent}; }`;
+            }
+
+            if (document.getElementById('enableAfter').checked) {
+                const afterContent = document.getElementById('afterContent').value || "''";
+                css += `#previewButton::after { content: ${afterContent}; }`;
+            }
+
+            // Glow effect
+            if (document.getElementById('glowEffect').checked) {
+                css += `
+                    @keyframes glow {
+                        0%, 100% { box-shadow: 0 0 5px rgba(33, 128, 141, 0.5); }
+                        50% { box-shadow: 0 0 20px rgba(33, 128, 141, 1), 0 0 30px rgba(33, 128, 141, 0.8); }
+                    }
+                    #previewButton { animation: glow 2s infinite; }
+                `;
+            }
+
+            // Custom keyframes
+            const keyframes = document.getElementById('keyframesCSS').value;
+            if (keyframes) {
+                css += keyframes;
+            }
+
+            // Animation properties
+            const animName = document.getElementById('animationName').value;
+            const animDuration = document.getElementById('animationDuration').value;
+            const animTiming = document.getElementById('animationTiming').value;
+            const animDelay = document.getElementById('animationDelay').value;
+            const animIterationCount = document.getElementById('animationIterationCount').value;
+            const animDirection = document.getElementById('animationDirection').value;
+
+            if (animName) {
+                css += `#previewButton {`;
+                css += `animation-name: ${animName};`;
+                if (animDuration) css += `animation-duration: ${animDuration};`;
+                if (animTiming) css += `animation-timing-function: ${animTiming};`;
+                if (animDelay) css += `animation-delay: ${animDelay};`;
+                if (animIterationCount) css += `animation-iteration-count: ${animIterationCount};`;
+                if (animDirection) css += `animation-direction: ${animDirection};`;
+                css += `}`;
+            }
+
+            styleElement.textContent = css;
+        }
+
+        function generateCode() {
+            const button = document.getElementById('previewButton');
+            const text = document.getElementById('buttonText').value;
+
+            // Generate HTML
+            const htmlCode = `<button class="custom-button">${text}</button>`;
+            document.getElementById('htmlCode').textContent = htmlCode;
+
+            // Generate CSS
+            let cssCode = `.custom-button {\n`;
+            const computedStyle = window.getComputedStyle(button);
+            
+            // Collect all styles
+            const properties = [
+                'width', 'height', 'padding', 'margin', 'display', 'box-sizing',
+                'border', 'border-radius', 'background-color', 'background-image',
+                'font-size', 'font-weight', 'font-family', 'color', 'text-transform',
+                'text-decoration', 'letter-spacing', 'line-height', 'text-shadow',
+                'box-shadow', 'cursor', 'opacity', 'filter', 'transform',
+                'transition', 'clip-path', 'mix-blend-mode'
+            ];
+
+            properties.forEach(prop => {
+                const value = button.style[prop] || '';
+                if (value) {
+                    const cssProp = prop.replace(/([A-Z])/g, '-$1').toLowerCase();
+                    cssCode += `  ${cssProp}: ${value};\n`;
+                }
+            });
+
+            cssCode += '}\n\n';
+
+            // Hover styles
+            const hoverBg = document.getElementById('hoverBg').value;
+            const hoverColor = document.getElementById('hoverColor').value;
+            if (hoverBg || hoverColor) {
+                cssCode += `.custom-button:hover {\n`;
+                if (hoverBg) cssCode += `  background-color: ${hoverBg};\n`;
+                if (hoverColor) cssCode += `  color: ${hoverColor};\n`;
+                cssCode += '}\n\n';
+            }
+
+            // Keyframes
+            const keyframes = document.getElementById('keyframesCSS').value;
+            if (keyframes) {
+                cssCode += keyframes + '\n';
+            }
+
+            document.getElementById('cssCode').textContent = cssCode;
+
+            // Generate JS (for ripple effect)
+            let jsCode = '// No JavaScript required for basic button\n';
+            if (document.getElementById('rippleEffect').checked) {
+                jsCode = `document.querySelector('.custom-button').addEventListener('click', function(e) {
+    const ripple = document.createElement('span');
+    ripple.classList.add('ripple');
+    this.appendChild(ripple);
+    
+    const rect = this.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    ripple.style.width = ripple.style.height = size + 'px';
+    ripple.style.left = e.clientX - rect.left - size / 2 + 'px';
+    ripple.style.top = e.clientY - rect.top - size / 2 + 'px';
+    
+    setTimeout(() => ripple.remove(), 600);
+});`;
+            }
+            document.getElementById('jsCode').textContent = jsCode;
+
+            // Switch to code tab
+            switchTab('code');
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent === 'Code') {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        function copyCode(elementId) {
+            const code = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                alert('Code copied to clipboard!');
+            });
+        }
+
+        // Initialize
+        updatePreview();
+    </script>
+</body>
+</html>
+
